@@ -1,0 +1,14 @@
+{
+  "name": "sarkarsetu-backend",
+  "version": "1.0.0",
+  "main": "server.js",
+  "type": "module",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "express": "^4.22.1",
+    "groq-sdk": "^0.37.0",
+    "mongoose": "^9.2.1",
+    "openai": "^4.0.0"
+  }
+}
