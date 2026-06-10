@@ -7,12 +7,11 @@ Hackathon team repository for ZenithX - [hackindia-team:vibe-coding-hackathon-20
 
 ---
 
-## 🎥 Demo Video
-https://youtube.com/your-demo-link
+
 
 ---
 
-## 🚩 Problem Statement
+##  Problem Statement
 
 Millions of Indians, especially in rural areas, are unaware of government 
 welfare schemes they are eligible for — due to language barriers, lack of 
@@ -24,7 +23,7 @@ answers voice questions in real time, and shows nearby Jan Seva Kendra on map.
 
 ---
 
-## ✨ Features
+##  Features
 
 - 🔍 Scheme eligibility based on category, state and income
 - 🤖 AI explanation in Hindi using Groq LLaMA 3.3 70B
@@ -44,24 +43,12 @@ answers voice questions in real time, and shows nearby Jan Seva Kendra on map.
 | Database | MongoDB |
 | AI | Groq API (LLaMA 3.3 70B) |
 | Frontend | HTML, CSS, JavaScript |
-| Map | Leaflet.js + OpenStreetMap |
+
 | Voice | Web Speech API |
 | Face | OpenCV |
 
 ---
 
-## 📸 Screenshots
-
-### Scheme Results
-![Schemes](screenshots/schemes.png)
-
-### Jan Seva Kendra Map
-![Map](screenshots/map.png)
-
-### Analytics Dashboard
-![Dashboard](screenshots/dashboard.png)
-
----
 
 ## ⚙️ Setup Instructions
 
