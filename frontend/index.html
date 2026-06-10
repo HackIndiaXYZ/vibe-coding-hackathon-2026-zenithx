@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Sarkar Setu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;800&family=Noto+Sans+Devanagari:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+
+  <!-- ===================== FACE OVERLAY CSS ===================== -->
+  <style>
+    #faceOverlay {
+      position: fixed;
+      inset: 0;
+      background: #EFF6FF;
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.5s ease;
+    }
+    #faceOverlay.hide {
+      opacity: 0;
+      pointer-events: none;
+    }
+    #faceCard {
+      background: white;
+      border-radius: 20px;
+      padding: 32px 28px;
+      text-align: center;
+      width: 360px;
+      box-shadow: 0 8px 32px rgba(13,43,107,0.12);
+    }
+    .f-logo {
+      font-size: 22px;
+      font-weight: 800;
+      color: #1E3A8A;
+      margin-bottom: 4px;
+      font-family: 'Baloo 2', sans-serif;
+    }
+    .f-logo span { color: #FF6B2B; }
+    .f-sub {
+      font-size: 12px;
+      color: #94A3B8;
+      margin-bottom: 20px;
+    }
+    .f-cam-wrap {
+      position: relative;
+      width: 220px;
+      height: 220px;
+      margin: 0 auto 18px;
+      border-radius: 50%;
+      overflow: hidden;
+      border: 3px solid #E2E8F0;
+      background: #F1F5F9;
+    }
+    #faceVideo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+    .f-ring {
+      position: absolute;
+      inset: -3px;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      border-top-color: #3B82F6;
+      animation: fSpin 1.2s linear infinite;
+    }
+    .f-ring.done { animation: none; border-color: #10B981; }
+    @keyframes fSpin { to { transform: rotate(360deg); } }
+    .f-status {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1E293B;
+      margin-bottom: 3px;
+      font-family: 'Baloo 2', sans-serif;
+    }
+    .f-hint {
+      font-size: 12px;
+      color: #64748B;
+      margin-bottom: 14px;
+    }
+    .f-bar-track {
+      width: 100%;
+      height: 5px;
+      background: #F1F5F9;
+      border-radius: 5px;
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+    .f-bar {
+      height: 100%;
+      width: 0%;
+      background: #3B82F6;
+      border-radius: 5px;
+      transition: width 0.4s ease, background 0.3s ease;
+    }
+    .f-badge {
+      display: none;
+      background: #EFF6FF;
+      color: #2563EB;
+      border: 1px solid #BFDBFE;
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      margin-bottom: 10px;
+    }
+    .f-retry {
+      display: none;
+      background: #1E3A8A;
+      color: white;
+      border: none;
+      padding: 9px 22px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'Baloo 2', sans-serif;
+      margin-top: 6px;
+    }
+    .f-retry:hover { background: #1D4ED8; }
+    .f-log {
+      background: #F8FAFC;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 10px;
+      color: #94A3B8;
+      text-align: left;
+      max-height: 60px;
+      overflow-y: auto;
+      font-family: monospace;
+      margin-top: 12px;
+    }
+    .f-log .ok   { color: #10B981; }
+    .f-log .err  { color: #EF4444; }
+    .f-log .info { color: #3B82F6; }
+  </style>
+
+  <!-- ===================== VOICE CHAT CSS ===================== -->
+  <style>
+    #voiceChat {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      border-radius: 24px 24px 0 0;
+      box-shadow: 0 -8px 40px rgba(0,0,0,0.15);
+      z-index: 1000;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 24px 32px;
+      animation: vcSlideUp 0.4s ease;
+    }
+    @keyframes vcSlideUp {
+      from { transform: translateY(100%); }
+      to   { transform: translateY(0); }
+    }
+    .vc-handle {
+      width: 40px; height: 5px;
+      background: #E2E8F0;
+      border-radius: 5px;
+      margin-bottom: 16px;
+    }
+    .vc-avatar {
+      width: 72px; height: 72px;
+      background: #1E3A8A;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      margin-bottom: 12px;
+      position: relative;
+    }
+    .vc-avatar.speaking::after {
+      content: '';
+      position: absolute;
+      inset: -6px;
+      border-radius: 50%;
+      border: 3px solid #1E3A8A;
+      animation: speakRing 1s ease-out infinite;
+      opacity: 0.5;
+    }
+    @keyframes speakRing {
+      0%   { transform: scale(1);   opacity: 0.5; }
+      100% { transform: scale(1.3); opacity: 0; }
+    }
+    .vc-name {
+      font-size: 16px;
+      font-weight: 700;
+      color: #1E293B;
+      font-family: 'Baloo 2', sans-serif;
+      margin-bottom: 4px;
+    }
+    .vc-status {
+      font-size: 13px;
+      color: #64748B;
+      font-family: 'Noto Sans Devanagari', sans-serif;
+      margin-bottom: 20px;
+      min-height: 20px;
+      text-align: center;
+    }
+    .vc-bubble {
+      background: #EFF6FF;
+      border-left: 4px solid #1E3A8A;
+      border-radius: 12px;
+      padding: 12px 16px;
+      width: 100%;
+      font-size: 14px;
+      color: #1E293B;
+      font-family: 'Noto Sans Devanagari', sans-serif;
+      line-height: 1.6;
+      margin-bottom: 20px;
+      min-height: 52px;
+      display: none;
+    }
+    .vc-bubble.show { display: block; }
+    .vc-mic-btn {
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      background: #1E3A8A;
+      border: none;
+      font-size: 34px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 20px rgba(30,58,138,0.35);
+      transition: transform 0.15s, background 0.2s;
+      margin-bottom: 10px;
+    }
+    .vc-mic-btn:active { transform: scale(0.93); }
+    .vc-mic-btn.listening {
+      background: #DC2626;
+      box-shadow: 0 4px 20px rgba(220,38,38,0.4);
+      animation: micGlow 1s infinite;
+    }
+    @keyframes micGlow {
+      0%, 100% { box-shadow: 0 0 0 0    rgba(220,38,38,0.4); }
+      50%       { box-shadow: 0 0 0 16px rgba(220,38,38,0);   }
+    }
+    .vc-mic-label {
+      font-size: 12px;
+      color: #94A3B8;
+      font-family: 'Baloo 2', sans-serif;
+      margin-bottom: 20px;
+    }
+    .vc-close {
+      background: #F1F5F9;
+      border: none;
+      border-radius: 20px;
+      padding: 8px 24px;
+      font-size: 13px;
+      color: #64748B;
+      cursor: pointer;
+      font-family: 'Baloo 2', sans-serif;
+    }
+    .vc-close:hover { background: #E2E8F0; }
+    #vcTrigger {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      width: 64px; height: 64px;
+      background: #1E3A8A;
+      border-radius: 50%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 4px 20px rgba(30,58,138,0.4);
+      z-index: 999;
+      animation: popIn 0.4s ease;
+    }
+    @keyframes popIn {
+      0%   { transform: scale(0); opacity: 0; }
+      80%  { transform: scale(1.1); }
+      100% { transform: scale(1);   opacity: 1; }
+    }
+    .vc-trigger-dot {
+      position: absolute;
+      top: 5px; right: 5px;
+      width: 14px; height: 14px;
+      background: #FF6B2B;
+      border-radius: 50%;
+      border: 2px solid white;
+      animation: blink 1.5s infinite;
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+    .typing-dots span {
+      display: inline-block;
+      width: 7px; height: 7px;
+      background: #94A3B8;
+      border-radius: 50%;
+      margin: 0 2px;
+      animation: tdot 1.2s infinite;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes tdot {
+      0%,80%,100% { transform: scale(0.8); opacity: 0.5; }
+      40%          { transform: scale(1.2); opacity: 1; }
+    }
+
+    /* scheme card AI box */
+    .ai-box {
+      background: #EFF6FF;
+      border-left: 4px solid #3B82F6;
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-top: 10px;
+      font-size: 13px;
+      color: #1E293B;
+      font-family: 'Noto Sans Devanagari', sans-serif;
+      line-height: 1.6;
+      white-space: pre-line;
+    }
+  </style>
+</head>
+
+<body>
+
+<!-- ===================== FACE LOGIN OVERLAY ===================== -->
+<div id="faceOverlay">
+  <div id="faceCard">
+    <div class="f-logo">Sarkar <span>Setu</span></div>
+    <div class="f-sub">Face recognition login — no password needed</div>
+    <div class="f-cam-wrap">
+      <video id="faceVideo" autoplay playsinline muted></video>
+      <canvas id="faceCanvas" style="display:none"></canvas>
+      <div class="f-ring" id="faceRing"></div>
+    </div>
+    <div class="f-status" id="faceStatus">Starting camera...</div>
+    <div class="f-hint"   id="faceHint">Please wait</div>
+    <div class="f-bar-track">
+      <div class="f-bar" id="faceBar"></div>
+    </div>
+    <div class="f-badge" id="faceBadge"></div>
+    <button class="f-retry" id="faceRetry" onclick="faceStartCamera()">Try Again</button>
+    <div class="f-log" id="faceLog"></div>
+  </div>
+</div>
+
+<!-- ===================== NAV ===================== -->
+<nav class="main-nav">
+  <div class="nav-left">
+    <span class="logo"><img src="f80e5ec2-fdfd-4ff0-b7a5-ccc1b8ad859d.jpg" height="110px"></span>
+    <span class="title"><h1>Sarkar Setu</h1></span>
+  </div>
+  <button id="darkToggle" class="dark-btn">🌙</button>
+</nav>
+
+<!-- ===================== HERO ===================== -->
+<section class="hero-section">
+  <div class="hero-text">
+    <h1>
+      Find Government Schemes Easily <br>
+      <span class="hindi">सरकारी योजनाएं आसानी से खोजें</span>
+    </h1>
+    <p>Discover central & state government schemes based on your profile.</p>
+  </div>
+  <div class="hero-image">
+    <img src="https://assets.thehansindia.com/h-upload/2021/10/13/1117111-welfare.webp" alt="Government Illustration">
+  </div>
+</section>
+
+<!-- ===================== STEP INDICATOR ===================== -->
+<div class="steps">
+  <div class="step active" id="step1">1️⃣ Category</div>
+  <div class="step" id="step2">2️⃣ State</div>
+  <div class="step" id="step3">3️⃣ About You</div>
+  <div class="step" id="step4">4️⃣ Result</div>
+</div>
+
+<!-- ===================== SCREEN 1: CATEGORY ===================== -->
+<div class="screen active" id="selectionScreen">
+  <h2>Who are you looking for? <br> आप किसके लिए योजना ढूंढ रहे हैं?</h2>
+  <div class="category-list">
+    <div class="category-card" onclick="selectCategory(this,'Farmer')">
+      <img src="https://cdn-icons-png.flaticon.com/512/3063/3063820.png" class="card-icon">
+      Farmer / किसान
+    </div>
+    <div class="category-card" onclick="selectCategory(this,'Women')">
+      <img src="https://cdn-icons-png.flaticon.com/512/2922/2922561.png" class="card-icon">
+      Women / महिला
+    </div>
+    <div class="category-card" onclick="selectCategory(this,'Education')">
+      <img src="https://cdn-icons-png.flaticon.com/512/3135/3135755.png" class="card-icon">
+      Education / शिक्षा
+    </div>
+    <div class="category-card" onclick="selectCategory(this,'Health')">
+      <img src="https://cdn-icons-png.flaticon.com/512/4140/4140048.png" class="card-icon">
+      Health / स्वास्थ्य
+    </div>
+    <div class="category-card" onclick="selectCategory(this,'Business')">
+      <img src="https://cdn-icons-png.flaticon.com/512/1995/1995574.png" class="card-icon">
+      Business / व्यापार
+    </div>
+    <div class="category-card" onclick="selectCategory(this,'Housing')">
+      <img src="https://cdn-icons-png.flaticon.com/512/1946/1946488.png" class="card-icon">
+      Housing / आवास
+    </div>
+    <div class="category-card" onclick="selectCategory(this,'Employment')">
+      <img src="https://cdn-icons-png.flaticon.com/512/3135/3135755.png" class="card-icon">
+      Employment / रोजगार
+    </div>
+    <div class="category-card" onclick="selectCategory(this,'Finance')">
+      <img src="https://cdn-icons-png.flaticon.com/512/1946/1946488.png" class="card-icon">
+      Finance / वित्त
+    </div>
+    <div class="category-card" onclick="selectCategory(this,'Pension')">
+      <img src="https://cdn-icons-png.flaticon.com/512/4140/4140048.png" class="card-icon">
+      Pension / पेंशन
+    </div>
+  </div>
+</div>
+
+<!-- ===================== SCREEN 2: STATE ===================== -->
+<div class="screen" id="stateScreen">
+  <h2>Which state do you live in? <br> आप किस राज्य में रहते हैं?</h2>
+  <div class="category-list">
+    <div class="category-card" onclick="selectState(this,'Andhra Pradesh')">📍 Andhra Pradesh</div>
+    <div class="category-card" onclick="selectState(this,'Arunachal Pradesh')">📍 Arunachal Pradesh</div>
+    <div class="category-card" onclick="selectState(this,'Assam')">📍 Assam</div>
+    <div class="category-card" onclick="selectState(this,'Bihar')">📍 Bihar</div>
+    <div class="category-card" onclick="selectState(this,'Chhattisgarh')">📍 Chhattisgarh</div>
+    <div class="category-card" onclick="selectState(this,'Goa')">📍 Goa</div>
+    <div class="category-card" onclick="selectState(this,'Gujarat')">📍 Gujarat</div>
+    <div class="category-card" onclick="selectState(this,'Haryana')">📍 Haryana</div>
+    <div class="category-card" onclick="selectState(this,'Himachal Pradesh')">📍 Himachal Pradesh</div>
+    <div class="category-card" onclick="selectState(this,'Jharkhand')">📍 Jharkhand</div>
+    <div class="category-card" onclick="selectState(this,'Karnataka')">📍 Karnataka</div>
+    <div class="category-card" onclick="selectState(this,'Kerala')">📍 Kerala</div>
+    <div class="category-card" onclick="selectState(this,'Madhya Pradesh')">📍 Madhya Pradesh</div>
+    <div class="category-card" onclick="selectState(this,'Maharashtra')">📍 Maharashtra</div>
+    <div class="category-card" onclick="selectState(this,'Manipur')">📍 Manipur</div>
+    <div class="category-card" onclick="selectState(this,'Meghalaya')">📍 Meghalaya</div>
+    <div class="category-card" onclick="selectState(this,'Mizoram')">📍 Mizoram</div>
+    <div class="category-card" onclick="selectState(this,'Nagaland')">📍 Nagaland</div>
+    <div class="category-card" onclick="selectState(this,'Odisha')">📍 Odisha</div>
+    <div class="category-card" onclick="selectState(this,'Punjab')">📍 Punjab</div>
+    <div class="category-card" onclick="selectState(this,'Rajasthan')">📍 Rajasthan</div>
+    <div class="category-card" onclick="selectState(this,'Sikkim')">📍 Sikkim</div>
+    <div class="category-card" onclick="selectState(this,'Tamil Nadu')">📍 Tamil Nadu</div>
+    <div class="category-card" onclick="selectState(this,'Telangana')">📍 Telangana</div>
+    <div class="category-card" onclick="selectState(this,'Tripura')">📍 Tripura</div>
+    <div class="category-card" onclick="selectState(this,'Uttar Pradesh')">📍 Uttar Pradesh</div>
+    <div class="category-card" onclick="selectState(this,'Uttarakhand')">📍 Uttarakhand</div>
+    <div class="category-card" onclick="selectState(this,'West Bengal')">📍 West Bengal</div>
+  </div>
+  <button class="back-btn" onclick="goBackToCategory()">⬅ Back</button>
+</div>
+
+<!-- ===================== SCREEN 3: ABOUT YOU ===================== -->
+<div class="screen" id="formScreen">
+  <div class="form-card">
+    <h1 class="big-heading">
+      A Bit About You <br>
+      <span class="hindi">आपके बारे में थोड़ा सा</span>
+    </h1>
+    <p id="selectedTitle" class="selected-info"></p>
+    <div class="input-group">
+      <label>Annual Family Income <br> वार्षिक पारिवारिक आय</label>
+      <select id="income">
+        <option value="">-- Select Income --</option>
+        <option value="below50">Below ₹50,000</option>
+        <option value="50-1">₹50,000 - ₹1 Lakh</option>
+        <option value="1-3">₹1 Lakh - ₹3 Lakh</option>
+        <option value="3-5">₹3 Lakh - ₹5 Lakh</option>
+        <option value="above5">Above ₹5 Lakh</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <label>Do you have a Ration Card? <br> क्या आपके पास राशन कार्ड है?</label>
+      <select id="ration">
+        <option value="">-- Select Option --</option>
+        <option value="yes">Yes / हाँ</option>
+        <option value="no">No / नहीं</option>
+      </select>
+    </div>
+    <div class="button-group">
+      <button onclick="checkEligibility()">Check Schemes</button>
+      <button class="back-btn" onclick="goBackToState()">⬅ Back</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== SCREEN 4: RESULT ===================== -->
+<div class="screen" id="resultScreen">
+  <h2 class="result-heading">
+    Eligible Government Schemes <br>
+    <span class="hindi">आपके लिए उपलब्ध सरकारी योजनाएं</span>
+  </h2>
+  <div id="schemesContainer" class="schemes-container"></div>
+  <button class="back-btn" onclick="goBackToForm()">⬅ Back</button>
+</div>
+
+<!-- ===================== FLOATING MIC TRIGGER ===================== -->
+<button id="vcTrigger" onclick="openVoiceChat()">
+  🎤
+  <div class="vc-trigger-dot"></div>
+</button>
+
+<!-- ===================== VOICE CHAT PANEL ===================== -->
+<div id="voiceChat">
+  <div class="vc-handle"></div>
+  <div class="vc-avatar" id="vcAvatar">🤖</div>
+  <div class="vc-name">Sarkar Setu AI</div>
+  <div class="vc-status" id="vcStatus">तैयार हूं...</div>
+  <div class="vc-bubble" id="vcBubble"></div>
+  <button class="vc-mic-btn" id="vcMicBtn" onclick="toggleVoiceMic()">🎤</button>
+  <div class="vc-mic-label" id="vcMicLabel">बोलने के लिए दबाएं</div>
+  <button class="vc-close" onclick="closeVoiceChat()">बंद करें ✕</button>
+</div>
+
+<!-- ===================== FOOTER ===================== -->
+<footer class="main-footer">
+  <div class="footer-top">
+    <h3>Government Scheme Finder Portal</h3>
+    <p>Empowering Citizens with Easy Access to Government Schemes</p>
+  </div>
+  <div class="footer-links">
+    <div>
+      <h4>Quick Links</h4>
+      <p>Home</p>
+      <p>About</p>
+      <p>Contact</p>
+    </div>
+    <div>
+      <h4>Support</h4>
+      <p>Email: support@govfinder.in</p>
+      <p>Helpline: 1800-000-000</p>
+    </div>
+    <div>
+      <h4>Disclaimer</h4>
+      <p>This is a demo educational project.</p>
+      <p>Not an official government website.</p>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    © 2026 Government Scheme Finder | Designed by Sakshi
+  </div>
+  <section class="bottom-illustration">
+    <img src="https://images.cdn.kukufm.com/f:webp/https://s3.ap-south-1.amazonaws.com/kukufm/channel_icons/a21f56c0f8734eaeb3bc891246889d04.png" height="250" width="50" alt="Citizens Illustration">
+  </section>
+</footer>
+
+<!-- ===================== MAIN SCRIPT ===================== -->
+<script src="script.js"></script>
+
+<!-- ===================== FACE RECOGNITION SCRIPT ===================== -->
+<script>
+  const fVideo   = document.getElementById("faceVideo");
+  const fCanvas  = document.getElementById("faceCanvas");
+  const fRing    = document.getElementById("faceRing");
+  const fBar     = document.getElementById("faceBar");
+  const fBadge   = document.getElementById("faceBadge");
+  const fRetry   = document.getElementById("faceRetry");
+  const fLogBox  = document.getElementById("faceLog");
+
+  let fScanning = false;
+  let fAttempts = 0;
+  let fTimer    = null;
+  let fStream   = null;
+
+  function fLog(msg, type = "info") {
+    const p = document.createElement("p");
+    p.className = type;
+    p.innerText = msg;
+    fLogBox.appendChild(p);
+    fLogBox.scrollTop = fLogBox.scrollHeight;
+  }
+
+  function fSetStatus(main, hint) {
+    document.getElementById("faceStatus").innerText = main;
+    document.getElementById("faceHint").innerText   = hint;
+  }
+
+  function fSetBar(pct, color = "#3B82F6") {
+    fBar.style.width      = pct + "%";
+    fBar.style.background = color;
+  }
+
+  function fCapture() {
+    fCanvas.width  = fVideo.videoWidth  || 640;
+    fCanvas.height = fVideo.videoHeight || 480;
+    fCanvas.getContext("2d").drawImage(fVideo, 0, 0);
+    return fCanvas.toDataURL("image/jpeg", 0.8);
+  }
+
+  function fStopCamera() {
+    try {
+      if (fStream) {
+        fStream.getTracks().forEach(track => track.stop());
+        fStream = null;
+      }
+      if (fVideo.srcObject) {
+        fVideo.srcObject.getTracks().forEach(track => track.stop());
+        fVideo.srcObject = null;
+      }
+      fVideo.pause();
+      fVideo.src = "";
+      fVideo.load();
+      fLog("Camera closed", "ok");
+    } catch(e) {
+      fLog("Stop error: " + e.message, "err");
+    }
+  }
+
+  async function faceStartCamera() {
+    fRetry.style.display = "none";
+    fSetStatus("Starting camera...", "Please wait");
+    fSetBar(10);
+    fLog("Requesting camera...", "info");
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      fSetStatus("Camera not supported", "Use Chrome or Edge");
+      fLog("getUserMedia not supported", "err");
+      fRetry.style.display = "block";
+      return;
+    }
+
+    try {
+      fStream = await navigator.mediaDevices.getUserMedia({
+        video: { width: 640, height: 480, facingMode: "user" },
+        audio: false
+      });
+      fVideo.srcObject = fStream;
+      fLog("Camera granted", "ok");
+
+      fVideo.onloadedmetadata = () => {
+        fLog("Camera ready", "ok");
+        fSetStatus("Look at the camera", "कैमरे की ओर देखें");
+        fSetBar(20);
+        setTimeout(fStartScanning, 2000);
+      };
+
+    } catch (err) {
+      fLog("Error: " + err.name, "err");
+      fRetry.style.display = "block";
+      if (err.name === "NotAllowedError") {
+        fSetStatus("Camera blocked", "Click address bar → Allow camera");
+      } else if (err.name === "NotFoundError") {
+        fSetStatus("No camera found", "Connect a webcam and retry");
+      } else if (err.name === "NotReadableError") {
+        fSetStatus("Camera busy", "Close Zoom or Teams, then retry");
+      } else {
+        fSetStatus("Camera error", err.message);
+      }
+    }
+  }
+
+  function fStartScanning() {
+    if (fScanning) return;
+    fScanning = true;
+    fAttempts = 0;
+    fSetStatus("Scanning face...", "चेहरा स्कैन हो रहा है");
+
+    fTimer = setInterval(async () => {
+      fAttempts++;
+      fSetBar(Math.min(20 + fAttempts * 3, 88));
+
+      try {
+        const res  = await fetch("http://localhost:5000/api/face/identify", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ image: fCapture() })
+        });
+        const data = await res.json();
+
+        if (data.status === "no_face") {
+          fSetStatus("No face detected", "Move closer to camera");
+          fLog("No face — attempt " + fAttempts, "info");
+          return;
+        }
+
+        if (data.status === "login" || data.status === "register") {
+          clearInterval(fTimer);
+          fScanning = false;
+          fOnSuccess(data);
+          return;
+        }
+
+        if (data.error) fLog("Server: " + data.error, "err");
+
+      } catch (err) {
+        fLog("Fetch error: " + err.message, "err");
+        fSetStatus("Connecting...", "Flask running on port 5000?");
+      }
+
+      if (fAttempts >= 30) {
+        clearInterval(fTimer);
+        fScanning = false;
+        fLog("Retrying in 3s...", "info");
+        fSetStatus("Retrying...", "Please face the camera");
+        setTimeout(fStartScanning, 3000);
+      }
+
+    }, 500);
+  }
+
+  function fOnSuccess(data) {
+    clearInterval(fTimer);
+    fScanning = false;
+    fRing.className  = "f-ring done";
+    fSetBar(100, "#10B981");
+
+    if (data.status === "login") {
+      fSetStatus("Welcome back!", "आपका स्वागत है");
+      fLog("Logged in: " + data.userId, "ok");
+    } else {
+      fSetStatus("Registered!", "सफलतापूर्वक पंजीकृत");
+      fLog("New user: " + data.userId, "ok");
+    }
+
+    fBadge.innerText     = "User ID: " + data.userId;
+    fBadge.style.display = "block";
+    sessionStorage.setItem("userId",       data.userId);
+    sessionStorage.setItem("faceVerified", "true");
+
+    fStopCamera();
+
+    setTimeout(() => {
+      const overlay = document.getElementById("faceOverlay");
+      overlay.classList.add("hide");
+      setTimeout(() => {
+        overlay.style.display = "none";
+        overlay.remove();
+      }, 500);
+    }, 2000);
+  }
+
+  // start on load
+  if (sessionStorage.getItem("faceVerified") === "true") {
+    document.getElementById("faceOverlay").style.display = "none";
+  } else {
+    faceStartCamera();
+  }
+</script>
+
+<!-- ===================== VOICE CHAT SCRIPT ===================== -->
+<script>
+  let vcOpen        = false;
+  let vcListening   = false;
+  let vcRecognition = null;
+  let vcHistory     = [];
+  let vcSchemes     = [];
+  let vcSpeaking    = false;
+
+  // ✅ force voices to load immediately
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = () => {
+    window.speechSynthesis.getVoices();
+  };
+
+  /***************************************
+    SHOW AFTER SCHEMES LOAD — called from script.js
+  ***************************************/
+  function showChatAfterSchemes(schemes) {
+    vcSchemes = schemes || [];
+
+    // show mic button after 1.5s
+    setTimeout(() => {
+      const trigger = document.getElementById("vcTrigger");
+      trigger.style.display = "flex";
+
+      // auto open after 2.5s and greet
+      setTimeout(() => {
+        openVoiceChat();
+        setTimeout(() => {
+          aiSpeak(
+            "नमस्ते! क्या आपको इन योजनाओं के बारे में कोई confusion है? बोलने के लिए नीचे वाला बटन दबाएं।",
+            "क्या कोई confusion है?"
+          );
+        }, 600);
+      }, 2500);
+
+    }, 1500);
+  }
+
+  /***************************************
+    OPEN / CLOSE
+  ***************************************/
+  function openVoiceChat() {
+    vcOpen = true;
+    document.getElementById("voiceChat").style.display  = "flex";
+    document.getElementById("vcTrigger").style.display  = "none";
+  }
+
+  function closeVoiceChat() {
+    vcOpen = false;
+    window.speechSynthesis.cancel();
+    if (vcRecognition) vcRecognition.stop();
+    document.getElementById("voiceChat").style.display  = "none";
+    document.getElementById("vcTrigger").style.display  = "flex";
+    setVcStatus("तैयार हूं...");
+  }
+
+  /***************************************
+    HELPERS
+  ***************************************/
+  function setVcStatus(text) {
+    document.getElementById("vcStatus").innerText = text;
+  }
+
+  function showBubble(text) {
+    const b = document.getElementById("vcBubble");
+    b.innerText   = text;
+    b.className   = "vc-bubble show";
+  }
+
+  function showTypingBubble() {
+    const b = document.getElementById("vcBubble");
+    b.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+    b.className = "vc-bubble show";
+  }
+
+  function setAvatar(speaking) {
+    document.getElementById("vcAvatar").className = speaking ? "vc-avatar speaking" : "vc-avatar";
+  }
+
+  /***************************************
+    AI SPEAK
+  ***************************************/
+  function aiSpeak(fullText, shortText) {
+    window.speechSynthesis.cancel();
+    vcSpeaking = true;
+    setAvatar(true);
+    setVcStatus("बोल रहा हूं...");
+    showBubble(shortText || fullText);
+
+    const clean = fullText
+      .replace(/[^\w\s\u0900-\u097F\n\-:,।.()]/g, "")
+      .substring(0, 400);
+
+    const utter      = new SpeechSynthesisUtterance(clean);
+    utter.lang       = "hi-IN";
+    utter.rate       = 0.88;
+    utter.pitch      = 1;
+
+    const voices     = window.speechSynthesis.getVoices();
+    const hindiVoice = voices.find(v => v.lang === "hi-IN" || v.lang.startsWith("hi"));
+    if (hindiVoice) utter.voice = hindiVoice;
+
+    utter.onend = () => {
+      vcSpeaking = false;
+      setAvatar(false);
+      setVcStatus("बोलने के लिए बटन दबाएं");
+      document.getElementById("vcMicLabel").innerText = "बोलने के लिए दबाएं";
+    };
+
+    window.speechSynthesis.speak(utter);
+    vcHistory.push({ role: "assistant", content: fullText });
+  }
+
+  /***************************************
+    MIC TOGGLE
+  ***************************************/
+  function toggleVoiceMic() {
+    if (vcSpeaking) {
+      window.speechSynthesis.cancel();
+      vcSpeaking = false;
+      setAvatar(false);
+    }
+    if (vcListening) stopVoiceMic();
+    else startVoiceMic();
+  }
+
+  /***************************************
+    START LISTENING
+  ***************************************/
+  function startVoiceMic() {
+    if (!("webkitSpeechRecognition" in window) && !("SpeechRecognition" in window)) {
+      aiSpeak(
+        "माफ़ करें, आपका ब्राउज़र voice सपोर्ट नहीं करता। कृपया Chrome browser use करें।",
+        "Chrome browser use करें"
+      );
+      return;
+    }
+
+    const SR      = window.SpeechRecognition || window.webkitSpeechRecognition;
+    vcRecognition = new SR();
+    vcRecognition.lang            = "hi-IN";
+    vcRecognition.continuous      = false;
+    vcRecognition.interimResults  = false;
+
+    vcRecognition.onstart = () => {
+      vcListening = true;
+      document.getElementById("vcMicBtn").classList.add("listening");
+      document.getElementById("vcMicBtn").innerText   = "🔴";
+      document.getElementById("vcMicLabel").innerText = "सुन रहा हूं...";
+      setVcStatus("आप बोलें...");
+      showBubble("सुन रहा हूं... 🎙️");
+    };
+
+    vcRecognition.onresult = (event) => {
+      const spoken = event.results[0][0].transcript;
+      stopVoiceMic();
+      handleVoiceInput(spoken);
+    };
+
+    vcRecognition.onerror = (e) => {
+      stopVoiceMic();
+      if (e.error === "no-speech") {
+        setVcStatus("कुछ सुनाई नहीं दिया — फिर कोशिश करें");
+      } else {
+        setVcStatus("माइक में समस्या — फिर दबाएं");
+      }
+    };
+
+    vcRecognition.onend = () => stopVoiceMic();
+    vcRecognition.start();
+  }
+
+  /***************************************
+    STOP LISTENING
+  ***************************************/
+  function stopVoiceMic() {
+    vcListening = false;
+    if (vcRecognition) vcRecognition.stop();
+    document.getElementById("vcMicBtn").classList.remove("listening");
+    document.getElementById("vcMicBtn").innerText   = "🎤";
+    document.getElementById("vcMicLabel").innerText = "बोलने के लिए दबाएं";
+  }
+
+  /***************************************
+    HANDLE VOICE INPUT → GROQ → SPEAK
+  ***************************************/
+  async function handleVoiceInput(spoken) {
+    showBubble('आपने कहा: "' + spoken + '"');
+    setVcStatus("सोच रहा हूं...");
+    vcHistory.push({ role: "user", content: spoken });
+
+    setTimeout(() => showTypingBubble(), 400);
+
+    try {
+      const schemeContext = vcSchemes.length > 0
+        ? `उपयोगकर्ता को ये योजनाएं दिखाई गई हैं: ${vcSchemes.map(s => s.name).join(", ")}.`
+        : "उपयोगकर्ता सरकारी योजनाओं के बारे में पूछ रहा है।";
+
+      const res = await fetch("http://localhost:5000/api/chat", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({
+          message: spoken,
+          context: schemeContext,
+          history: vcHistory.slice(-6)
+        })
+      });
+
+      const data       = await res.json();
+      const reply      = data.reply || "माफ़ करें, कुछ समस्या हुई।";
+      const shortReply = reply.length > 80 ? reply.substring(0, 80) + "..." : reply;
+
+      aiSpeak(reply, shortReply);
+
+    } catch (err) {
+      console.error("Voice chat error:", err);
+      aiSpeak(
+        "सर्वर से जुड़ने में समस्या हुई। Flask चल रहा है?",
+        "सर्वर से जुड़ने में समस्या"
+      );
+    }
+  }
+</script>
+
+</body>
+</html>
